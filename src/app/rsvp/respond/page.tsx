@@ -1,14 +1,14 @@
 "use client";
 
 import { useWedding } from "@/lib/context";
-import { useParams } from "next/navigation";
-import { useState, useMemo } from "react";
-import { Heart, CheckCircle2, Send, Star } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useState, useMemo, Suspense } from "react";
+import { Heart, CheckCircle2, Send, Star, Loader2 } from "lucide-react";
 
-export default function RSVPResponsePage() {
+function RSVPForm() {
   const { data, updateGuest } = useWedding();
-  const params = useParams();
-  const rsvpId = params.id as string;
+  const searchParams = useSearchParams();
+  const rsvpId = searchParams.get("id") || "";
 
   const guest = useMemo(
     () => data.guests.find((g) => g.rsvpLink === rsvpId),
@@ -21,7 +21,7 @@ export default function RSVPResponsePage() {
   const [dietaryNotes, setDietaryNotes] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  if (!guest) {
+  if (!rsvpId || !guest) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="card text-center max-w-md">
@@ -142,9 +142,7 @@ export default function RSVPResponsePage() {
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-navy-700 mb-1">
-                    מספר מבוגרים
-                  </label>
+                  <label className="block text-sm font-medium text-navy-700 mb-1">מספר מבוגרים</label>
                   <input
                     type="number"
                     min="1"
@@ -155,9 +153,7 @@ export default function RSVPResponsePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-navy-700 mb-1">
-                    מספר ילדים
-                  </label>
+                  <label className="block text-sm font-medium text-navy-700 mb-1">מספר ילדים</label>
                   <input
                     type="number"
                     min="0"
@@ -170,9 +166,7 @@ export default function RSVPResponsePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-navy-700 mb-1">
-                  הערות (אלרגיות, דיאטה...)
-                </label>
+                <label className="block text-sm font-medium text-navy-700 mb-1">הערות (אלרגיות, דיאטה...)</label>
                 <textarea
                   className="input-field min-h-[80px] resize-none"
                   value={dietaryNotes}
@@ -197,5 +191,17 @@ export default function RSVPResponsePage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function RSVPResponsePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
+      </div>
+    }>
+      <RSVPForm />
+    </Suspense>
   );
 }

@@ -38,14 +38,14 @@ export default function RSVPPage() {
   }, [data.guests]);
 
   const copyLink = (rsvpLink: string) => {
-    const url = `${baseUrl}/rsvp/${rsvpLink}`;
+    const url = `${baseUrl}/rsvp/respond?id=${rsvpLink}`;
     navigator.clipboard.writeText(url);
     setCopiedId(rsvpLink);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
   const shareWhatsApp = (guest: typeof data.guests[0]) => {
-    const url = `${baseUrl}/rsvp/${guest.rsvpLink}`;
+    const url = `${baseUrl}/rsvp/respond?id=${guest.rsvpLink}`;
     const message = encodeURIComponent(
       `בס"ד\n\nלכבוד משפחת ${guest.lastName} שליט"א\n\n` +
       `בשמחה רבה הננו מזמינים אתכם לשמוח אתנו בשמחת הנישואין של\n` +
