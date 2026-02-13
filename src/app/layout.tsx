@@ -4,8 +4,8 @@ import { WeddingProvider } from "@/lib/context";
 import Navigation from "@/components/Navigation";
 
 export const metadata: Metadata = {
-  title: "שמחת חתן וכלה - ניהול חתונה חרדית",
-  description: "אפליקציה מקיפה לתכנון וניהול חתונה חרדית אשכנזית",
+  title: "חתונתנו - ניהול חתונה חכם",
+  description: "אפליקציה מודרנית לתכנון וניהול חתונה",
 };
 
 export default function RootLayout({

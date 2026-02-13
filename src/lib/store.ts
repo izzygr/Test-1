@@ -3,7 +3,7 @@
 import { WeddingData, ChecklistItem } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
-const STORAGE_KEY = "simchat-chatan-data";
+const STORAGE_KEY = "hatunateinu-data";
 
 const DEFAULT_CHECKLIST: Omit<ChecklistItem, "id">[] = [
   // 6+ months before

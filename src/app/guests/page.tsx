@@ -511,7 +511,7 @@ export default function GuestsPage() {
             if (groupGuests.length === 0) return null;
             const total = groupGuests.reduce((sum, g) => sum + g.numberOfGuests, 0);
             return (
-              <div key={key} className="p-3 bg-cream-50 rounded-xl border border-gold-100">
+              <div key={key} className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                 <p className="text-sm font-medium text-navy-700">{label}</p>
                 <p className="text-lg font-bold text-gold-700">{total} <span className="text-sm font-normal text-gray-500">אורחים</span></p>
                 <p className="text-xs text-gray-400">{groupGuests.length} משפחות</p>
