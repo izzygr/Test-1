@@ -50,22 +50,20 @@ interface WeddingContextType {
 
 const WeddingContext = createContext<WeddingContextType | null>(null);
 
-export function WeddingProvider({ children, userId }: { children: ReactNode; userId?: string }) {
+export function WeddingProvider({ children, currentUserName }: { children: ReactNode; currentUserName?: string }) {
   const [data, setData] = useState<WeddingData>(getDefaultData());
   const [loaded, setLoaded] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(userId);
 
   useEffect(() => {
-    setCurrentUserId(userId);
-    setData(loadData(userId));
+    setData(loadData());
     setLoaded(true);
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     if (loaded) {
-      saveData(data, currentUserId);
+      saveData(data);
     }
-  }, [data, loaded, currentUserId]);
+  }, [data, loaded]);
 
   const updateSettings = useCallback((settings: Partial<WeddingData>) => {
     setData((prev) => ({ ...prev, ...settings }));
@@ -76,20 +74,20 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
     const id = uuidv4();
     setData((prev) => ({
       ...prev,
-      guests: [...prev.guests, { ...guest, id, rsvpLink: id.slice(0, 8) }],
+      guests: [...prev.guests, { ...guest, id, rsvpLink: id.slice(0, 8), createdBy: currentUserName }],
     }));
-  }, []);
+  }, [currentUserName]);
 
   const addGuests = useCallback((guests: Omit<Guest, "id" | "rsvpLink">[]) => {
     const newGuests = guests.map((g) => {
       const id = uuidv4();
-      return { ...g, id, rsvpLink: id.slice(0, 8) };
+      return { ...g, id, rsvpLink: id.slice(0, 8), createdBy: currentUserName };
     });
     setData((prev) => ({
       ...prev,
       guests: [...prev.guests, ...newGuests],
     }));
-  }, []);
+  }, [currentUserName]);
 
   const updateGuest = useCallback((id: string, updates: Partial<Guest>) => {
     setData((prev) => ({
@@ -113,9 +111,9 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
   const addTable = useCallback((table: Omit<Table, "id" | "guestIds">) => {
     setData((prev) => ({
       ...prev,
-      tables: [...prev.tables, { ...table, id: uuidv4(), guestIds: [] }],
+      tables: [...prev.tables, { ...table, id: uuidv4(), guestIds: [], createdBy: currentUserName }],
     }));
-  }, []);
+  }, [currentUserName]);
 
   const updateTable = useCallback((id: string, updates: Partial<Table>) => {
     setData((prev) => ({
@@ -164,9 +162,9 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
   const addBudgetItem = useCallback((item: Omit<BudgetItem, "id">) => {
     setData((prev) => ({
       ...prev,
-      budget: [...prev.budget, { ...item, id: uuidv4() }],
+      budget: [...prev.budget, { ...item, id: uuidv4(), createdBy: currentUserName }],
     }));
-  }, []);
+  }, [currentUserName]);
 
   const updateBudgetItem = useCallback((id: string, updates: Partial<BudgetItem>) => {
     setData((prev) => ({
@@ -186,9 +184,9 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
   const addVendor = useCallback((vendor: Omit<Vendor, "id">) => {
     setData((prev) => ({
       ...prev,
-      vendors: [...prev.vendors, { ...vendor, id: uuidv4() }],
+      vendors: [...prev.vendors, { ...vendor, id: uuidv4(), createdBy: currentUserName }],
     }));
-  }, []);
+  }, [currentUserName]);
 
   const updateVendor = useCallback((id: string, updates: Partial<Vendor>) => {
     setData((prev) => ({
@@ -219,9 +217,9 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
   const addChecklistItem = useCallback((item: Omit<ChecklistItem, "id">) => {
     setData((prev) => ({
       ...prev,
-      checklist: [...prev.checklist, { ...item, id: uuidv4() }],
+      checklist: [...prev.checklist, { ...item, id: uuidv4(), createdBy: currentUserName }],
     }));
-  }, []);
+  }, [currentUserName]);
 
   const deleteChecklistItem = useCallback((id: string) => {
     setData((prev) => ({

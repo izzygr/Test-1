@@ -284,7 +284,12 @@ export default function BudgetPage() {
                     <span className={`inline-block w-3 h-3 rounded-full ${categoryColors[item.category] || "bg-gray-400"} ml-2`} />
                     {BUDGET_CATEGORY_LABELS[item.category]}
                   </td>
-                  <td className="py-3 px-2 text-gray-600">{item.description}</td>
+                  <td className="py-3 px-2">
+                    <span className="text-gray-600">{item.description}</span>
+                    {item.createdBy && (
+                      <p className="text-[11px] text-gray-400">נוסף ע״י {item.createdBy}</p>
+                    )}
+                  </td>
                   <td className="py-3 px-2 font-medium">₪{item.planned.toLocaleString()}</td>
                   <td className="py-3 px-2 font-medium">₪{item.actual.toLocaleString()}</td>
                   <td className="py-3 px-2 text-center">

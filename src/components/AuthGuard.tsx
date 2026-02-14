@@ -23,7 +23,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
   }
 
   return (
-    <WeddingProvider userId={user.id}>
+    <WeddingProvider currentUserName={user.displayName}>
       <div className="flex min-h-screen">
         <Navigation />
         <main className="flex-1 lg:mr-64 pt-16 lg:pt-0">

@@ -451,7 +451,12 @@ export default function GuestsPage() {
                   <td className="py-3 px-2">
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${guest.gender === "male" ? "bg-blue-400" : "bg-pink-400"}`} />
-                      <span className="font-medium">{guest.firstName} {guest.lastName}</span>
+                      <div>
+                        <span className="font-medium">{guest.firstName} {guest.lastName}</span>
+                        {guest.createdBy && (
+                          <p className="text-[11px] text-gray-400">נוסף ע״י {guest.createdBy}</p>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="py-3 px-2 text-gray-600" dir="ltr">{guest.phone}</td>

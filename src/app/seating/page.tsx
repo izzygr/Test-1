@@ -56,7 +56,10 @@ function TableCard({
     <div className={`rounded-2xl border-2 ${typeColors[table.type] || typeColors["רגיל"]} p-4 transition-all`}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <h4 className="font-bold text-navy-700 text-sm">{table.name}</h4>
+          <div>
+            <h4 className="font-bold text-navy-700 text-sm">{table.name}</h4>
+            {table.createdBy && <p className="text-[11px] text-gray-400">נוסף ע״י {table.createdBy}</p>}
+          </div>
           {isOverflow && <AlertTriangle className="w-4 h-4 text-red-500" />}
         </div>
         <div className="flex items-center gap-1">

@@ -293,6 +293,9 @@ export default function ChecklistPage() {
                             <span className="badge text-xs bg-gray-100 text-gray-600">
                               {item.category}
                             </span>
+                            {item.createdBy && (
+                              <span className="text-[11px] text-gray-400">נוסף ע״י {item.createdBy}</span>
+                            )}
                           </div>
                         </div>
 

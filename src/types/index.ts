@@ -37,6 +37,7 @@ export interface Guest {
   dietaryNotes?: string;
   notes?: string;
   rsvpLink?: string;
+  createdBy?: string;
   rsvpResponse?: {
     attending: boolean;
     count: number;
@@ -55,6 +56,7 @@ export interface Table {
   guestIds: string[];
   x: number;
   y: number;
+  createdBy?: string;
 }
 
 export type BudgetCategory =
@@ -79,6 +81,7 @@ export interface BudgetItem {
   actual: number;
   paid: boolean;
   notes?: string;
+  createdBy?: string;
 }
 
 export type VendorStatus = "בבדיקה" | "נסגר" | "שולם" | "בוטל";
@@ -94,6 +97,7 @@ export interface Vendor {
   notes?: string;
   contractUrl?: string;
   paymentDue?: string;
+  createdBy?: string;
 }
 
 export type TaskAssignee = "חתן" | "כלה" | "הורי_חתן" | "הורי_כלה" | "משותף";
@@ -107,6 +111,7 @@ export interface ChecklistItem {
   dueWeeksBefore: number;
   completed: boolean;
   completedAt?: string;
+  createdBy?: string;
 }
 
 export interface WeddingData {
