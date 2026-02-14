@@ -3,7 +3,7 @@
 import { ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 import { WeddingProvider } from "@/lib/context";
-import LoginPage from "@/app/login/page";
+import LoginForm from "./LoginForm";
 import Navigation from "./Navigation";
 import { Loader2 } from "lucide-react";
 
@@ -19,7 +19,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
   }
 
   if (!user) {
-    return <LoginPage />;
+    return <LoginForm />;
   }
 
   return (
