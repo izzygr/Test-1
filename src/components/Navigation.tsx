@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/lib/auth";
 import {
   Home,
   Users,
@@ -14,6 +15,9 @@ import {
   Menu,
   X,
   Sparkles,
+  Shield,
+  LogOut,
+  User,
 } from "lucide-react";
 
 const navItems = [
@@ -29,6 +33,11 @@ const navItems = [
 export default function Navigation() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, logout } = useAuth();
+
+  const allNavItems = user?.isAdmin
+    ? [...navItems, { href: "/admin", label: "ניהול משתמשים", icon: Shield }]
+    : navItems;
 
   return (
     <>
@@ -47,7 +56,7 @@ export default function Navigation() {
 
         {/* Nav Items */}
         <nav className="flex-1 py-4 px-3 space-y-1">
-          {navItems.map((item) => {
+          {allNavItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (
@@ -74,9 +83,24 @@ export default function Navigation() {
           })}
         </nav>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-100 text-center">
-          <p className="text-xs text-gray-300">בסימן טוב ומזל טוב</p>
+        {/* User Info & Logout */}
+        <div className="p-3 border-t border-gray-100">
+          <div className="flex items-center gap-3 px-3 py-2 mb-2">
+            <div className="w-8 h-8 rounded-full bg-gold-50 flex items-center justify-center">
+              <User className="w-4 h-4 text-gold-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-navy-700 truncate">{user?.displayName}</p>
+              <p className="text-xs text-gray-400 truncate">{user?.username}</p>
+            </div>
+          </div>
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            התנתק
+          </button>
         </div>
       </aside>
 
@@ -104,11 +128,11 @@ export default function Navigation() {
           onClick={() => setMobileOpen(false)}
         >
           <div
-            className="absolute right-0 top-0 bottom-0 w-72 bg-white shadow-2xl pt-16"
+            className="absolute right-0 top-0 bottom-0 w-72 bg-white shadow-2xl pt-16 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <nav className="py-4 px-3 space-y-1">
-              {navItems.map((item) => {
+            <nav className="flex-1 py-4 px-3 space-y-1">
+              {allNavItems.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
                 return (
@@ -128,6 +152,28 @@ export default function Navigation() {
                 );
               })}
             </nav>
+
+            {/* Mobile User Info & Logout */}
+            <div className="p-3 border-t border-gray-100">
+              <div className="flex items-center gap-3 px-3 py-2 mb-2">
+                <div className="w-8 h-8 rounded-full bg-gold-50 flex items-center justify-center">
+                  <User className="w-4 h-4 text-gold-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-navy-700 truncate">{user?.displayName}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  logout();
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                התנתק
+              </button>
+            </div>
           </div>
         </div>
       )}

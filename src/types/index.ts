@@ -1,3 +1,12 @@
+export interface AppUser {
+  id: string;
+  username: string;
+  password: string;
+  displayName: string;
+  isAdmin: boolean;
+  createdAt: string;
+}
+
 export type Gender = "male" | "female";
 export type GuestGroup =
   | "חתן_משפחה"
