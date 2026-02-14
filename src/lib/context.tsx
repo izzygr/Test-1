@@ -50,20 +50,22 @@ interface WeddingContextType {
 
 const WeddingContext = createContext<WeddingContextType | null>(null);
 
-export function WeddingProvider({ children }: { children: ReactNode }) {
+export function WeddingProvider({ children, userId }: { children: ReactNode; userId?: string }) {
   const [data, setData] = useState<WeddingData>(getDefaultData());
   const [loaded, setLoaded] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(userId);
 
   useEffect(() => {
-    setData(loadData());
+    setCurrentUserId(userId);
+    setData(loadData(userId));
     setLoaded(true);
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     if (loaded) {
-      saveData(data);
+      saveData(data, currentUserId);
     }
-  }, [data, loaded]);
+  }, [data, loaded, currentUserId]);
 
   const updateSettings = useCallback((settings: Partial<WeddingData>) => {
     setData((prev) => ({ ...prev, ...settings }));

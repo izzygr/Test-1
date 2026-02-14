@@ -3,7 +3,11 @@
 import { WeddingData, ChecklistItem } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
-const STORAGE_KEY = "simchat-chatan-data";
+const STORAGE_KEY_PREFIX = "hatunateinu-data";
+
+function getStorageKey(userId?: string): string {
+  return userId ? `${STORAGE_KEY_PREFIX}-${userId}` : STORAGE_KEY_PREFIX;
+}
 
 const DEFAULT_CHECKLIST: Omit<ChecklistItem, "id">[] = [
   // 6+ months before
@@ -99,10 +103,11 @@ function generateDefaultTables(): import("@/types").Table[] {
   return tables;
 }
 
-export function loadData(): WeddingData {
+export function loadData(userId?: string): WeddingData {
   if (typeof window === "undefined") return getDefaultData();
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const key = getStorageKey(userId);
+    const stored = localStorage.getItem(key);
     if (stored) {
       const parsed = JSON.parse(stored);
       const defaults = getDefaultData();
@@ -114,10 +119,11 @@ export function loadData(): WeddingData {
   return getDefaultData();
 }
 
-export function saveData(data: WeddingData): void {
+export function saveData(data: WeddingData, userId?: string): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    const key = getStorageKey(userId);
+    localStorage.setItem(key, JSON.stringify(data));
   } catch {
     // ignore
   }

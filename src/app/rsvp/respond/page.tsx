@@ -3,7 +3,7 @@
 import { useWedding } from "@/lib/context";
 import { useSearchParams } from "next/navigation";
 import { useState, useMemo, Suspense } from "react";
-import { Heart, CheckCircle2, Send, Star, Loader2 } from "lucide-react";
+import { CheckCircle2, Send, Sparkles, Loader2 } from "lucide-react";
 
 function RSVPForm() {
   const { data, updateGuest } = useWedding();
@@ -47,10 +47,9 @@ function RSVPForm() {
           <p className="text-gray-500 text-lg">
             {attending ? "שמחים שתגיעו לשמוח אתנו!" : "תודה על העדכון. נשמח לראותכם באירועים הבאים בע\"ה."}
           </p>
-          <div className="mt-4 flex items-center justify-center gap-2 text-gold-600">
-            <Star className="w-5 h-5" />
+          <div className="mt-4 flex items-center justify-center gap-2 text-gold-500">
+            <Sparkles className="w-5 h-5" />
             <span className="font-hebrew">בברכת מזל טוב</span>
-            <Star className="w-5 h-5" />
           </div>
         </div>
       </div>
@@ -78,16 +77,12 @@ function RSVPForm() {
       <div className="card max-w-lg w-full animate-fade-in">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Star className="w-6 h-6 text-gold-500" />
-            <Heart className="w-8 h-8 text-red-400 fill-red-400" />
-            <Star className="w-6 h-6 text-gold-500" />
-          </div>
-          <h1 className="text-3xl font-bold font-hebrew bg-gradient-to-l from-gold-600 to-gold-700 bg-clip-text text-transparent">
-            שמחת נישואין
+          <Sparkles className="w-8 h-8 text-gold-500 mx-auto mb-3" />
+          <h1 className="text-3xl font-bold font-hebrew text-navy-700">
+            הזמנה לחתונה
           </h1>
           <div className="ornament-divider">
-            <span className="text-gold-500 font-hebrew text-lg">
+            <span className="text-gold-600 font-hebrew text-lg">
               {data.groomName || "החתן"} & {data.brideName || "הכלה"}
             </span>
           </div>
@@ -105,7 +100,7 @@ function RSVPForm() {
         </div>
 
         <div className="ornament-divider">
-          <span className="text-sm text-gold-600">
+          <span className="text-sm text-gray-500">
             לכבוד משפחת {guest.lastName}
           </span>
         </div>
@@ -187,7 +182,7 @@ function RSVPForm() {
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">
-          ✡ בסימן טוב ומזל טוב ✡
+          בסימן טוב ומזל טוב
         </p>
       </div>
     </div>

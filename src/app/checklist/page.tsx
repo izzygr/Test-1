@@ -264,7 +264,7 @@ export default function ChecklistPage() {
                       <div
                         key={item.id}
                         className={`flex items-start gap-3 p-3 rounded-xl transition-all ${
-                          item.completed ? "bg-green-50/50 opacity-75" : "bg-cream-50 hover:bg-cream-100"
+                          item.completed ? "bg-green-50/50 opacity-75" : "bg-gray-50 hover:bg-gray-100"
                         }`}
                       >
                         <button

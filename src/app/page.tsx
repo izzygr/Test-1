@@ -10,8 +10,7 @@ import {
   Wallet,
   CheckSquare,
   CalendarHeart,
-  Heart,
-  Star,
+  Sparkles,
   Settings,
   Baby,
 } from "lucide-react";
@@ -51,10 +50,10 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
         { value: timeLeft.seconds, label: "שניות" },
       ].map((item, i) => (
         <div key={i} className="text-center">
-          <div className="bg-navy-500 text-gold-300 text-3xl md:text-4xl font-bold w-20 h-20 md:w-24 md:h-24 rounded-2xl flex items-center justify-center shadow-lg font-hebrew">
+          <div className="bg-navy-700 text-white text-3xl md:text-4xl font-bold w-20 h-20 md:w-24 md:h-24 rounded-2xl flex items-center justify-center shadow-sm font-hebrew">
             {String(item.value).padStart(2, "0")}
           </div>
-          <p className="text-sm text-gold-700 mt-2 font-medium">{item.label}</p>
+          <p className="text-sm text-gray-500 mt-2 font-medium">{item.label}</p>
         </div>
       ))}
     </div>
@@ -243,18 +242,17 @@ export default function Dashboard() {
       {/* Header */}
       <div className="text-center py-8">
         <div className="flex items-center justify-center gap-3 mb-4">
-          <Star className="w-8 h-8 text-gold-500" />
-          <h1 className="text-4xl md:text-5xl font-bold font-hebrew bg-gradient-to-l from-gold-600 via-gold-500 to-gold-700 bg-clip-text text-transparent">
-            שמחת חתן וכלה
+          <h1 className="text-4xl md:text-5xl font-bold font-hebrew text-navy-700">
+            חתונתנו
           </h1>
-          <Star className="w-8 h-8 text-gold-500" />
+          <Sparkles className="w-7 h-7 text-gold-500" />
         </div>
 
         {hasSetup ? (
           <>
-            <p className="text-xl text-navy-600 font-hebrew font-medium">
+            <p className="text-xl text-gray-600 font-hebrew font-medium">
               {data.groomName} {data.groomFamily && `(${data.groomFamily})`}
-              <Heart className="w-5 h-5 text-red-400 inline mx-3 fill-red-400" />
+              {" & "}
               {data.brideName} {data.brideFamily && `(${data.brideFamily})`}
             </p>
             {data.venue && (
@@ -280,7 +278,7 @@ export default function Dashboard() {
       {data.weddingDate && (
         <div className="card text-center py-8">
           <h2 className="text-xl font-bold text-navy-700 font-hebrew mb-6 flex items-center justify-center gap-2">
-            <CalendarHeart className="w-6 h-6 text-gold-500" />
+            <CalendarHeart className="w-5 h-5 text-gold-500" />
             ספירה לאחור ליום המאושר
           </h2>
           <CountdownTimer targetDate={data.weddingDate} />
