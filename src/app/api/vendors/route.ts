@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser, unauthorized } from "@/lib/api-auth";
+import { logActivity } from "@/lib/activity-log";
 
 export async function GET(request: NextRequest) {
   const auth = await getAuthUser(request);
@@ -33,6 +34,9 @@ export async function POST(request: NextRequest) {
         createdBy: auth.username,
       },
     });
+
+    await logActivity("הוספה", "ספק", vendor.name, auth.username);
+
     return Response.json(vendor, { status: 201 });
   } catch {
     return Response.json({ error: "שגיאת שרת" }, { status: 500 });
@@ -51,6 +55,10 @@ export async function PUT(request: NextRequest) {
       where: { id },
       data: updates,
     });
+
+    const changedFields = Object.keys(updates).filter(k => k !== "id").join(", ");
+    await logActivity("עדכון", "ספק", vendor.name, auth.username, changedFields);
+
     return Response.json(vendor);
   } catch {
     return Response.json({ error: "שגיאת שרת" }, { status: 500 });
@@ -65,7 +73,13 @@ export async function DELETE(request: NextRequest) {
     const { id } = await request.json();
     if (!id) return Response.json({ error: "מזהה נדרש" }, { status: 400 });
 
+    const vendor = await prisma.vendor.findUnique({ where: { id } });
     await prisma.vendor.delete({ where: { id } });
+
+    if (vendor) {
+      await logActivity("מחיקה", "ספק", vendor.name, auth.username);
+    }
+
     return Response.json({ success: true });
   } catch {
     return Response.json({ error: "שגיאת שרת" }, { status: 500 });

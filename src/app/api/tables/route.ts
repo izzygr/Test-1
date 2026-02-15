@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser, unauthorized } from "@/lib/api-auth";
+import { logActivity } from "@/lib/activity-log";
 
 export async function GET(request: NextRequest) {
   const auth = await getAuthUser(request);
@@ -65,6 +66,10 @@ export async function POST(request: NextRequest) {
       createdBy: t.createdBy,
     }));
 
+    for (const t of created) {
+      await logActivity("הוספה", "שולחן", t.name, auth.username);
+    }
+
     return Response.json(Array.isArray(body) ? result : result[0], { status: 201 });
   } catch {
     return Response.json({ error: "שגיאת שרת" }, { status: 500 });
@@ -101,6 +106,9 @@ export async function PUT(request: NextRequest) {
       include: { guests: { select: { id: true } } },
     });
 
+    const changedFields = Object.keys(updates).filter(k => k !== "id").join(", ");
+    await logActivity("עדכון", "שולחן", table.name, auth.username, changedFields || (guestIds !== undefined ? "שיבוץ אורחים" : undefined));
+
     return Response.json({
       id: table.id,
       name: table.name,
@@ -125,6 +133,8 @@ export async function DELETE(request: NextRequest) {
     const { id } = await request.json();
     if (!id) return Response.json({ error: "מזהה נדרש" }, { status: 400 });
 
+    const table = await prisma.table.findUnique({ where: { id } });
+
     // Unassign guests from this table
     await prisma.guest.updateMany({
       where: { tableId: id },
@@ -132,6 +142,11 @@ export async function DELETE(request: NextRequest) {
     });
 
     await prisma.table.delete({ where: { id } });
+
+    if (table) {
+      await logActivity("מחיקה", "שולחן", table.name, auth.username);
+    }
+
     return Response.json({ success: true });
   } catch {
     return Response.json({ error: "שגיאת שרת" }, { status: 500 });

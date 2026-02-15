@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser, unauthorized } from "@/lib/api-auth";
+import { logActivity } from "@/lib/activity-log";
 
 export async function GET(request: NextRequest) {
   const auth = await getAuthUser(request);
@@ -30,6 +31,9 @@ export async function PUT(request: NextRequest) {
       update: updates,
       create: { id: "default", ...updates },
     });
+
+    const changedFields = Object.keys(updates).join(", ");
+    await logActivity("עדכון", "הגדרות", "הגדרות חתונה", auth.username, changedFields);
 
     return Response.json(settings);
   } catch {

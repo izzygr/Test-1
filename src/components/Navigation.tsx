@@ -18,6 +18,7 @@ import {
   Shield,
   LogOut,
   User,
+  Clock,
 } from "lucide-react";
 
 const navItems = [
@@ -28,6 +29,7 @@ const navItems = [
   { href: "/budget", label: "תקציב", icon: Wallet },
   { href: "/vendors", label: "ספקים", icon: Store },
   { href: "/checklist", label: "משימות", icon: CheckSquare },
+  { href: "/activity-log", label: "יומן פעילות", icon: Clock },
 ];
 
 export default function Navigation() {

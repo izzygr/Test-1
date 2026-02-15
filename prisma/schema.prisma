@@ -112,3 +112,13 @@ model ChecklistItem {
   completedAt     DateTime?
   createdBy       String?
 }
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  action      String
+  entityType  String
+  entityName  String
+  details     String?
+  username    String
+  createdAt   DateTime @default(now())
+}

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser, unauthorized } from "@/lib/api-auth";
+import { logActivity } from "@/lib/activity-log";
 
 export async function GET(request: NextRequest) {
   const auth = await getAuthUser(request);
@@ -35,6 +36,9 @@ export async function POST(request: NextRequest) {
         createdBy: auth.username,
       },
     });
+
+    await logActivity("הוספה", "משימה", item.title, auth.username);
+
     return Response.json(item, { status: 201 });
   } catch {
     return Response.json({ error: "שגיאת שרת" }, { status: 500 });
@@ -60,6 +64,9 @@ export async function PUT(request: NextRequest) {
           completedAt: !current.completed ? new Date() : null,
         },
       });
+
+      await logActivity("עדכון", "משימה", item.title, auth.username, item.completed ? "סומן כבוצע" : "סומן כלא בוצע");
+
       return Response.json({
         ...item,
         completedAt: item.completedAt?.toISOString() || undefined,
@@ -70,6 +77,10 @@ export async function PUT(request: NextRequest) {
       where: { id },
       data: updates,
     });
+
+    const changedFields = Object.keys(updates).filter(k => k !== "id").join(", ");
+    await logActivity("עדכון", "משימה", item.title, auth.username, changedFields);
+
     return Response.json({
       ...item,
       completedAt: item.completedAt?.toISOString() || undefined,
@@ -87,7 +98,13 @@ export async function DELETE(request: NextRequest) {
     const { id } = await request.json();
     if (!id) return Response.json({ error: "מזהה נדרש" }, { status: 400 });
 
+    const item = await prisma.checklistItem.findUnique({ where: { id } });
     await prisma.checklistItem.delete({ where: { id } });
+
+    if (item) {
+      await logActivity("מחיקה", "משימה", item.title, auth.username);
+    }
+
     return Response.json({ success: true });
   } catch {
     return Response.json({ error: "שגיאת שרת" }, { status: 500 });
