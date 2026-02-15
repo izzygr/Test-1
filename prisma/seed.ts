@@ -1,7 +1,9 @@
 import { PrismaClient } from "../src/generated/prisma/client.js";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import bcryptjs from "bcryptjs";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaLibSql({ url: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
 
 const DEFAULT_CHECKLIST = [
   { title: "קביעת תאריך החתונה", category: "כללי", assignee: "משותף", dueWeeksBefore: 26, description: "תיאום עם הרבנים ובדיקת זמינות אולמות" },

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { Sparkles, LogIn, AlertCircle } from "lucide-react";
+import { Sparkles, LogIn, AlertCircle, Loader2 } from "lucide-react";
 
 export default function LoginForm() {
   const { login } = useAuth();
@@ -10,16 +10,23 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!username || !password) {
       setError("יש למלא שם משתמש וסיסמא");
       return;
     }
-    const success = login(username, password);
-    if (!success) {
-      setError("שם משתמש או סיסמא שגויים");
+    setLoading(true);
+    try {
+      const success = await login(username, password);
+      if (!success) {
+        setError("שם משתמש או סיסמא שגויים");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,9 +76,9 @@ export default function LoginForm() {
               </div>
             )}
 
-            <button type="submit" className="btn-gold w-full flex items-center justify-center gap-2">
-              <LogIn className="w-5 h-5" />
-              כניסה
+            <button type="submit" disabled={loading} className="btn-gold w-full flex items-center justify-center gap-2">
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
+              {loading ? "מתחבר..." : "כניסה"}
             </button>
           </form>
         </div>

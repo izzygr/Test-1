@@ -2,12 +2,12 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { AppUser } from "@/types";
-import { authenticate, getSession, setSession, clearSession } from "./auth-store";
+import { authenticate, getSession, clearSession } from "./auth-store";
 
 interface AuthContextType {
   user: AppUser | null;
   isLoading: boolean;
-  login: (username: string, password: string) => boolean;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -18,16 +18,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const sessionUser = getSession();
-    setUser(sessionUser);
-    setIsLoading(false);
+    getSession().then((sessionUser) => {
+      setUser(sessionUser);
+      setIsLoading(false);
+    });
   }, []);
 
-  const login = useCallback((username: string, password: string): boolean => {
-    const authedUser = authenticate(username, password);
+  const login = useCallback(async (username: string, password: string): Promise<boolean> => {
+    const authedUser = await authenticate(username, password);
     if (authedUser) {
       setUser(authedUser);
-      setSession(authedUser);
       return true;
     }
     return false;

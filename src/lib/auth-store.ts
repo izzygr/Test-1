@@ -1,111 +1,97 @@
 "use client";
 
 import { AppUser } from "@/types";
-import { v4 as uuidv4 } from "uuid";
+import { api, getToken, setToken, clearToken } from "./api";
 
-const USERS_KEY = "hatunateinu-users";
-const SESSION_KEY = "hatunateinu-session";
-
-const DEFAULT_ADMIN: AppUser = {
-  id: "admin-001",
-  username: "Yisrael",
-  password: "1234",
-  displayName: "ישראל (אדמין)",
-  isAdmin: true,
-  createdAt: new Date().toISOString(),
-};
-
-export function getUsers(): AppUser[] {
-  if (typeof window === "undefined") return [DEFAULT_ADMIN];
+export async function authenticate(
+  username: string,
+  password: string
+): Promise<AppUser | null> {
   try {
-    const stored = localStorage.getItem(USERS_KEY);
-    if (stored) {
-      const users: AppUser[] = JSON.parse(stored);
-      // Ensure admin always exists
-      if (!users.find((u) => u.username === "Yisrael" && u.isAdmin)) {
-        users.unshift(DEFAULT_ADMIN);
-        localStorage.setItem(USERS_KEY, JSON.stringify(users));
-      }
-      return users;
-    }
+    const res = await api.post<{
+      token: string;
+      user: { id: string; username: string; displayName: string; isAdmin: boolean };
+    }>("/api/auth/login", { username, password });
+    setToken(res.token);
+    return {
+      id: res.user.id,
+      username: res.user.username,
+      displayName: res.user.displayName,
+      isAdmin: res.user.isAdmin,
+      password: "",
+      createdAt: "",
+    };
   } catch {
-    // ignore
-  }
-  // First time - initialize with admin
-  const users = [DEFAULT_ADMIN];
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  return users;
-}
-
-export function saveUsers(users: AppUser[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  } catch {
-    // ignore
+    return null;
   }
 }
 
-export function addUser(username: string, password: string, displayName: string): AppUser | null {
-  const users = getUsers();
-  if (users.find((u) => u.username === username)) return null;
-  const newUser: AppUser = {
-    id: uuidv4(),
-    username,
-    password,
-    displayName,
-    isAdmin: false,
-    createdAt: new Date().toISOString(),
-  };
-  users.push(newUser);
-  saveUsers(users);
-  return newUser;
-}
-
-export function deleteUser(id: string): boolean {
-  const users = getUsers();
-  const user = users.find((u) => u.id === id);
-  if (!user || user.isAdmin) return false; // Can't delete admin
-  saveUsers(users.filter((u) => u.id !== id));
-  return true;
-}
-
-export function updateUser(id: string, updates: Partial<Pick<AppUser, "password" | "displayName">>): boolean {
-  const users = getUsers();
-  const idx = users.findIndex((u) => u.id === id);
-  if (idx === -1) return false;
-  users[idx] = { ...users[idx], ...updates };
-  saveUsers(users);
-  return true;
-}
-
-export function authenticate(username: string, password: string): AppUser | null {
-  const users = getUsers();
-  return users.find((u) => u.username === username && u.password === password) || null;
-}
-
-export function getSession(): AppUser | null {
-  if (typeof window === "undefined") return null;
+export async function getSession(): Promise<AppUser | null> {
+  if (!getToken()) return null;
   try {
-    const stored = localStorage.getItem(SESSION_KEY);
-    if (stored) {
-      const session = JSON.parse(stored);
-      // Verify user still exists
-      const users = getUsers();
-      return users.find((u) => u.id === session.id) || null;
-    }
+    const res = await api.get<{
+      user: { id: string; username: string; displayName: string; isAdmin: boolean; createdAt: string };
+    }>("/api/auth/me");
+    return {
+      id: res.user.id,
+      username: res.user.username,
+      displayName: res.user.displayName,
+      isAdmin: res.user.isAdmin,
+      password: "",
+      createdAt: res.user.createdAt,
+    };
   } catch {
-    // ignore
+    clearToken();
+    return null;
   }
-  return null;
-}
-
-export function setSession(user: AppUser): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ id: user.id, username: user.username }));
 }
 
 export function clearSession(): void {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(SESSION_KEY);
+  clearToken();
+}
+
+// Admin user management - all via API
+export async function getUsers(): Promise<Omit<AppUser, "password">[]> {
+  try {
+    return await api.get<Omit<AppUser, "password">[]>("/api/users");
+  } catch {
+    return [];
+  }
+}
+
+export async function addUser(
+  username: string,
+  password: string,
+  displayName: string
+): Promise<Omit<AppUser, "password"> | null> {
+  try {
+    return await api.post<Omit<AppUser, "password">>("/api/users", {
+      username,
+      password,
+      displayName,
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteUser(id: string): Promise<boolean> {
+  try {
+    await api.delete("/api/users", { id });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function updateUser(
+  id: string,
+  updates: Partial<Pick<AppUser, "password" | "displayName">>
+): Promise<boolean> {
+  try {
+    await api.put("/api/users", { id, ...updates });
+    return true;
+  } catch {
+    return false;
+  }
 }
