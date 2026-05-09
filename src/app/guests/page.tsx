@@ -1,7 +1,7 @@
 "use client";
 
 import { useWedding } from "@/lib/context";
-import { useState, useRef, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Guest,
   GuestGroup,
@@ -21,9 +21,9 @@ import {
   UserCheck,
   X,
   Filter,
-  FileSpreadsheet,
 } from "lucide-react";
 import Papa from "papaparse";
+import CsvUploadModal from "@/components/CsvUploadModal";
 
 function GuestFormModal({
   open,
@@ -248,7 +248,7 @@ export default function GuestsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingGuest, setEditingGuest] = useState<Guest | undefined>();
   const [showFilters, setShowFilters] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showCsvModal, setShowCsvModal] = useState(false);
 
   const filteredGuests = useMemo(() => {
     return data.guests.filter((g) => {
@@ -263,43 +263,6 @@ export default function GuestsPage() {
       return matchSearch && matchGroup && matchStatus && matchSide && matchGender;
     });
   }, [data.guests, search, filterGroup, filterStatus, filterSide, filterGender]);
-
-  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        const guests: Omit<Guest, "id" | "rsvpLink">[] = [];
-        for (const row of results.data as Record<string, string>[]) {
-          const firstName = row["שם פרטי"] || row["first_name"] || row["firstName"] || "";
-          const lastName = row["שם משפחה"] || row["last_name"] || row["lastName"] || "";
-          if (!firstName && !lastName) continue;
-
-          guests.push({
-            firstName,
-            lastName,
-            phone: row["טלפון"] || row["phone"] || "",
-            email: row["אימייל"] || row["email"] || "",
-            gender: (row["מין"] === "נקבה" || row["gender"] === "female") ? "female" : "male",
-            group: (row["קבוצה"] || row["group"] || "אחר") as GuestGroup,
-            side: (row["צד"] === "כלה" || row["side"] === "כלה") ? "כלה" : "חתן",
-            status: "טרם_הוזמן",
-            numberOfGuests: Number(row["מספר אורחים"] || row["guests"] || 2),
-            numberOfChildren: Number(row["ילדים"] || row["children"] || 0),
-            dietaryNotes: row["הערות תזונה"] || row["dietary"] || "",
-            notes: row["הערות"] || row["notes"] || "",
-          });
-        }
-        if (guests.length > 0) {
-          addGuests(guests);
-        }
-      },
-    });
-    e.target.value = "";
-  };
 
   const handleExportCSV = () => {
     const csvData = data.guests.map((g) => ({
@@ -347,7 +310,7 @@ export default function GuestsPage() {
             <Plus className="w-4 h-4" />
             הוספת אורח
           </button>
-          <button className="btn-outline flex items-center gap-2" onClick={() => fileInputRef.current?.click()}>
+          <button className="btn-outline flex items-center gap-2" onClick={() => setShowCsvModal(true)}>
             <Upload className="w-4 h-4" />
             ייבוא CSV
           </button>
@@ -355,20 +318,6 @@ export default function GuestsPage() {
             <Download className="w-4 h-4" />
             ייצוא
           </button>
-          <input ref={fileInputRef} type="file" accept=".csv,.xlsx" className="hidden" onChange={handleCSVUpload} />
-        </div>
-      </div>
-
-      {/* CSV Template Info */}
-      <div className="card bg-blue-50/50 border-blue-200">
-        <div className="flex items-start gap-3">
-          <FileSpreadsheet className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-blue-800">ייבוא מקובץ Excel/CSV</p>
-            <p className="text-xs text-blue-600 mt-1">
-              עמודות נתמכות: שם פרטי, שם משפחה, טלפון, אימייל, מין (זכר/נקבה), צד (חתן/כלה), קבוצה, מספר אורחים, ילדים, הערות
-            </p>
-          </div>
         </div>
       </div>
 
@@ -538,6 +487,13 @@ export default function GuestsPage() {
             addGuest(formData);
           }
         }}
+      />
+
+      {/* CSV Upload Modal */}
+      <CsvUploadModal
+        open={showCsvModal}
+        onClose={() => setShowCsvModal(false)}
+        onImport={(guests) => addGuests(guests)}
       />
     </div>
   );
