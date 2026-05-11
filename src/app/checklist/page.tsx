@@ -46,6 +46,23 @@ function getTimeLabel(weeksBefore: number): string {
   return "6+ חודשים לפני";
 }
 
+const TIME_OPTIONS = [
+  { value: 26, label: "6+ חודשים לפני" },
+  { value: 24, label: "6 חודשים לפני" },
+  { value: 22, label: "5 חודשים לפני" },
+  { value: 20, label: "4-5 חודשים לפני" },
+  { value: 18, label: "4 חודשים לפני" },
+  { value: 14, label: "3 חודשים לפני" },
+  { value: 12, label: "3 חודשים לפני" },
+  { value: 8, label: "חודשיים לפני" },
+  { value: 6, label: "חודש וחצי לפני" },
+  { value: 4, label: "חודש לפני" },
+  { value: 3, label: "3 שבועות לפני" },
+  { value: 1, label: "שבוע לפני" },
+  { value: 0, label: "יום החתונה" },
+  { value: -1, label: "אחרי החתונה" },
+];
+
 function AddTaskModal({
   open,
   onClose,
@@ -94,9 +111,12 @@ function AddTaskModal({
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">שבועות לפני החתונה</label>
-            <input type="number" className="input-field" value={dueWeeksBefore} onChange={(e) => setDueWeeksBefore(Number(e.target.value))} />
-            <p className="text-xs text-gray-400 mt-1">0 = יום החתונה, מספר שלילי = אחרי החתונה</p>
+            <label className="block text-sm font-medium text-gray-600 mb-1">מתי לבצע</label>
+            <select className="select-field" value={dueWeeksBefore} onChange={(e) => setDueWeeksBefore(Number(e.target.value))}>
+              {TIME_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
           </div>
         </div>
         <div className="flex gap-3 mt-6">

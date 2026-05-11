@@ -1,30 +1,88 @@
 "use client";
 
-import { useWedding } from "@/lib/context";
 import { useSearchParams } from "next/navigation";
-import { useState, useMemo, Suspense } from "react";
-import { CheckCircle2, Send, Sparkles, Loader2 } from "lucide-react";
+import { useState, useEffect, Suspense, useCallback } from "react";
+import { CheckCircle2, Send, Sparkles, Loader2, XCircle } from "lucide-react";
+
+interface GuestData {
+  id: string;
+  firstName: string;
+  lastName: string;
+  numberOfGuests: number;
+  numberOfChildren: number;
+  rsvpResponse?: {
+    attending: boolean;
+    count: number;
+    childrenCount: number;
+    dietaryNotes?: string;
+    respondedAt: string;
+  };
+  wedding?: {
+    groomName: string;
+    brideName: string;
+    groomFamily: string;
+    brideFamily: string;
+    venue: string;
+    weddingDate: string;
+  };
+}
 
 function RSVPForm() {
-  const { data, updateGuest } = useWedding();
   const searchParams = useSearchParams();
   const rsvpId = searchParams.get("id") || "";
 
-  const guest = useMemo(
-    () => data.guests.find((g) => g.rsvpLink === rsvpId),
-    [data.guests, rsvpId]
-  );
+  const [guest, setGuest] = useState<GuestData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   const [attending, setAttending] = useState(true);
-  const [count, setCount] = useState(guest?.numberOfGuests || 2);
-  const [childrenCount, setChildrenCount] = useState(guest?.numberOfChildren || 0);
+  const [count, setCount] = useState(2);
+  const [childrenCount, setChildrenCount] = useState(0);
   const [dietaryNotes, setDietaryNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  if (!rsvpId || !guest) {
+  const fetchGuest = useCallback(async () => {
+    if (!rsvpId) {
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/rsvp?id=${encodeURIComponent(rsvpId)}`);
+      if (!res.ok) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+      const data: GuestData = await res.json();
+      setGuest(data);
+      setCount(data.numberOfGuests || 2);
+      setChildrenCount(data.numberOfChildren || 0);
+    } catch {
+      setNotFound(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [rsvpId]);
+
+  useEffect(() => {
+    fetchGuest();
+  }, [fetchGuest]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
+      </div>
+    );
+  }
+
+  if (notFound || !guest) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="card text-center max-w-md">
+          <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-navy-700 font-hebrew mb-4">
             הזמנה לא נמצאה
           </h1>
@@ -37,6 +95,7 @@ function RSVPForm() {
   }
 
   if (submitted || guest.rsvpResponse) {
+    const wasAttending = submitted ? attending : guest.rsvpResponse?.attending;
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="card text-center max-w-md animate-fade-in">
@@ -45,7 +104,9 @@ function RSVPForm() {
             תודה רבה!
           </h1>
           <p className="text-gray-500 text-lg">
-            {attending ? "שמחים שתגיעו לשמוח אתנו!" : "תודה על העדכון. נשמח לראותכם באירועים הבאים בע\"ה."}
+            {wasAttending
+              ? "שמחים שתגיעו לשמוח אתנו!"
+              : "תודה על העדכון. נשמח לראותכם באירועים הבאים בע\"ה."}
           </p>
           <div className="mt-4 flex items-center justify-center gap-2 text-gold-500">
             <Sparkles className="w-5 h-5" />
@@ -56,24 +117,32 @@ function RSVPForm() {
     );
   }
 
-  const handleSubmit = () => {
-    updateGuest(guest.id, {
-      status: attending ? "אישר" : "סירב",
-      numberOfGuests: attending ? count : 0,
-      numberOfChildren: attending ? childrenCount : 0,
-      rsvpResponse: {
-        attending,
-        count: attending ? count : 0,
-        childrenCount: attending ? childrenCount : 0,
-        dietaryNotes,
-        respondedAt: new Date().toISOString(),
-      },
-    });
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    try {
+      await fetch("/api/rsvp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rsvpId,
+          attending,
+          count: attending ? count : 0,
+          childrenCount: attending ? childrenCount : 0,
+          dietaryNotes,
+        }),
+      });
+      setSubmitted(true);
+    } catch {
+      alert("שגיאה בשליחת האישור. נסו שוב.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
+  const w = guest.wedding;
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-gold-50 to-white">
       <div className="card max-w-lg w-full animate-fade-in">
         {/* Header */}
         <div className="text-center mb-8">
@@ -83,12 +152,12 @@ function RSVPForm() {
           </h1>
           <div className="ornament-divider">
             <span className="text-gold-600 font-hebrew text-lg">
-              {data.groomName || "החתן"} & {data.brideName || "הכלה"}
+              {w?.groomName || "החתן"} & {w?.brideName || "הכלה"}
             </span>
           </div>
-          {data.weddingDate && (
+          {w?.weddingDate && (
             <p className="text-gray-500">
-              {new Date(data.weddingDate).toLocaleDateString("he-IL", {
+              {new Date(w.weddingDate).toLocaleDateString("he-IL", {
                 weekday: "long",
                 year: "numeric",
                 month: "long",
@@ -96,7 +165,7 @@ function RSVPForm() {
               })}
             </p>
           )}
-          {data.venue && <p className="text-gray-400 text-sm mt-1">{data.venue}</p>}
+          {w?.venue && <p className="text-gray-400 text-sm mt-1">{w.venue}</p>}
         </div>
 
         <div className="ornament-divider">
@@ -174,10 +243,20 @@ function RSVPForm() {
 
           <button
             onClick={handleSubmit}
+            disabled={submitting}
             className="btn-gold w-full py-4 text-lg flex items-center justify-center gap-2"
           >
-            <Send className="w-5 h-5" />
-            שליחת אישור
+            {submitting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                שולח...
+              </>
+            ) : (
+              <>
+                <Send className="w-5 h-5" />
+                שליחת אישור
+              </>
+            )}
           </button>
         </div>
 
@@ -191,11 +270,13 @@ function RSVPForm() {
 
 export default function RSVPResponsePage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
+        </div>
+      }
+    >
       <RSVPForm />
     </Suspense>
   );

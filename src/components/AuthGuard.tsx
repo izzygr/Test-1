@@ -1,14 +1,22 @@
 "use client";
 
 import { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { WeddingProvider } from "@/lib/context";
 import LoginForm from "./LoginForm";
 import Navigation from "./Navigation";
 import { Loader2 } from "lucide-react";
 
+const PUBLIC_PATHS = ["/rsvp/respond"];
+
 export default function AuthGuard({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
+  const pathname = usePathname();
+
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+    return <>{children}</>;
+  }
 
   if (isLoading) {
     return (

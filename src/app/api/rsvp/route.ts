@@ -26,6 +26,8 @@ export async function GET(request: NextRequest) {
     return Response.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
   }
 
+  const settings = await prisma.weddingSettings.findFirst({ where: { id: "default" } });
+
   return Response.json({
     id: guest.id,
     firstName: guest.firstName,
@@ -39,6 +41,16 @@ export async function GET(request: NextRequest) {
           childrenCount: guest.rsvpResponse.childrenCount,
           dietaryNotes: guest.rsvpResponse.dietaryNotes,
           respondedAt: guest.rsvpResponse.respondedAt.toISOString(),
+        }
+      : undefined,
+    wedding: settings
+      ? {
+          groomName: settings.groomName,
+          brideName: settings.brideName,
+          groomFamily: settings.groomFamily,
+          brideFamily: settings.brideFamily,
+          venue: settings.venue,
+          weddingDate: settings.weddingDate,
         }
       : undefined,
   });
