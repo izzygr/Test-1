@@ -83,7 +83,7 @@ function parseRow(row: Record<string, string>): PreviewRow {
   const numberOfGuests = Number(mapped["numberOfGuests"]) || 2;
 
   return {
-    firstName: couple.isCouple ? firstName : firstName,
+    firstName,
     lastName,
     gender,
     numberOfGuests,

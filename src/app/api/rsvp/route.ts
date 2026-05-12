@@ -59,11 +59,15 @@ export async function GET(request: NextRequest) {
 // Public endpoint - no auth required
 export async function POST(request: NextRequest) {
   try {
-    const { rsvpId, attending, count, childrenCount, dietaryNotes } = await request.json();
+    const body = await request.json();
+    const { rsvpId, attending, dietaryNotes } = body;
 
-    if (!rsvpId) {
-      return Response.json({ error: "מזהה RSVP נדרש" }, { status: 400 });
+    if (!rsvpId || typeof attending !== "boolean") {
+      return Response.json({ error: "נתונים חסרים" }, { status: 400 });
     }
+
+    const count = Math.max(0, Math.min(20, Math.floor(Number(body.count) || 0)));
+    const childrenCount = Math.max(0, Math.min(20, Math.floor(Number(body.childrenCount) || 0)));
 
     const guest = await prisma.guest.findFirst({
       where: { rsvpLink: rsvpId },
@@ -73,21 +77,24 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
     }
 
+    const finalCount = attending ? Math.max(1, count) : 0;
+    const finalChildren = attending ? childrenCount : 0;
+
     // Upsert RSVP response
     await prisma.rsvpResponse.upsert({
       where: { guestId: guest.id },
       update: {
         attending,
-        count: count || 1,
-        childrenCount: childrenCount || 0,
+        count: finalCount,
+        childrenCount: finalChildren,
         dietaryNotes: dietaryNotes || null,
         respondedAt: new Date(),
       },
       create: {
         guestId: guest.id,
         attending,
-        count: count || 1,
-        childrenCount: childrenCount || 0,
+        count: finalCount,
+        childrenCount: finalChildren,
         dietaryNotes: dietaryNotes || null,
       },
     });
@@ -97,8 +104,8 @@ export async function POST(request: NextRequest) {
       where: { id: guest.id },
       data: {
         status: attending ? "אישר" : "סירב",
-        numberOfGuests: count || guest.numberOfGuests,
-        numberOfChildren: childrenCount ?? guest.numberOfChildren,
+        numberOfGuests: attending ? finalCount : guest.numberOfGuests,
+        numberOfChildren: attending ? finalChildren : guest.numberOfChildren,
       },
     });
 

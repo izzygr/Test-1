@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser, unauthorized } from "@/lib/api-auth";
 import { logActivity } from "@/lib/activity-log";
@@ -71,27 +72,15 @@ export async function POST(request: NextRequest) {
             tableId: (g.tableId as string) || null,
             dietaryNotes: (g.dietaryNotes as string) || null,
             notes: (g.notes as string) || null,
-            rsvpLink: (g.rsvpLink as string) || undefined,
+            rsvpLink: (g.rsvpLink as string) || randomUUID().replace(/-/g, "").slice(0, 16),
             createdBy: auth.username,
           },
+          include: { rsvpResponse: true },
         })
       )
     );
 
-    // Generate rsvpLink from first 8 chars of id
-    await Promise.all(
-      created.map((g) =>
-        prisma.guest.update({
-          where: { id: g.id },
-          data: { rsvpLink: g.id.slice(0, 8) },
-        })
-      )
-    );
-
-    const result = await prisma.guest.findMany({
-      where: { id: { in: created.map((g) => g.id) } },
-      include: { rsvpResponse: true },
-    });
+    const result = created;
 
     // Log activity
     for (const g of created) {
