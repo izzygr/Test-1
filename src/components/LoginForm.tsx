@@ -38,7 +38,7 @@ export default function LoginForm() {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Sparkles className="w-6 h-6 text-gold-500" />
-              <h1 className="text-3xl font-bold font-hebrew text-navy-700">חתונתנו</h1>
+              <h1 className="text-3xl font-bold font-hebrew text-navy-700">החתונה</h1>
             </div>
             <p className="text-gray-400 text-sm">ניהול חתונה חכם</p>
           </div>

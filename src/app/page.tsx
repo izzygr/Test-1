@@ -258,7 +258,7 @@ export default function Dashboard() {
       <div className="text-center py-8">
         <div className="flex items-center justify-center gap-3 mb-4">
           <h1 className="text-4xl md:text-5xl font-bold font-hebrew text-navy-700">
-            חתונתנו
+            החתונה
           </h1>
           <Sparkles className="w-7 h-7 text-gold-500" />
         </div>

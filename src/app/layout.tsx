@@ -4,7 +4,7 @@ import { AuthProvider } from "@/lib/auth";
 import AuthGuard from "@/components/AuthGuard";
 
 export const metadata: Metadata = {
-  title: "חתונתנו - ניהול חתונה חכם",
+  title: "החתונה - ניהול חתונה חכם",
   description: "אפליקציה מודרנית לתכנון וניהול חתונה",
 };
 
