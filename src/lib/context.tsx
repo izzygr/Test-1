@@ -2,8 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { WeddingData, Guest, Table, BudgetItem, Vendor, ChecklistItem } from "@/types";
-import { loadData, saveData, getDefaultData } from "./store";
-import { v4 as uuidv4 } from "uuid";
+import { getDefaultData } from "./store";
+import { api } from "./api";
 
 interface WeddingContextType {
   data: WeddingData;
@@ -50,45 +50,85 @@ interface WeddingContextType {
 
 const WeddingContext = createContext<WeddingContextType | null>(null);
 
-export function WeddingProvider({ children, userId }: { children: ReactNode; userId?: string }) {
+interface SettingsResponse {
+  weddingDate?: string;
+  groomName?: string;
+  brideName?: string;
+  groomFamily?: string;
+  brideFamily?: string;
+  venue?: string;
+  totalBudget?: number;
+  language?: string;
+}
+
+export function WeddingProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<WeddingData>(getDefaultData());
   const [loaded, setLoaded] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(userId);
 
+  // Load all data from API on mount
   useEffect(() => {
-    setCurrentUserId(userId);
-    setData(loadData(userId));
-    setLoaded(true);
-  }, [userId]);
+    async function loadFromApi() {
+      try {
+        const [settings, guests, tables, budget, vendors, checklist] = await Promise.all([
+          api.get<SettingsResponse>("/api/settings").catch((): SettingsResponse => ({})),
+          api.get<Guest[]>("/api/guests").catch(() => []),
+          api.get<Table[]>("/api/tables").catch(() => []),
+          api.get<BudgetItem[]>("/api/budget").catch(() => []),
+          api.get<Vendor[]>("/api/vendors").catch(() => []),
+          api.get<ChecklistItem[]>("/api/checklist").catch(() => []),
+        ]);
 
-  useEffect(() => {
-    if (loaded) {
-      saveData(data, currentUserId);
+        const defaults = getDefaultData();
+        setData({
+          weddingDate: settings.weddingDate || defaults.weddingDate,
+          groomName: settings.groomName || defaults.groomName,
+          brideName: settings.brideName || defaults.brideName,
+          groomFamily: settings.groomFamily || defaults.groomFamily,
+          brideFamily: settings.brideFamily || defaults.brideFamily,
+          venue: settings.venue || defaults.venue,
+          totalBudget: settings.totalBudget ?? defaults.totalBudget,
+          language: (settings.language as "he" | "en") || defaults.language,
+          guests: guests as Guest[],
+          tables: tables as Table[],
+          budget: budget as BudgetItem[],
+          vendors: vendors as Vendor[],
+          checklist: (checklist as ChecklistItem[]).length > 0 ? (checklist as ChecklistItem[]) : defaults.checklist,
+        });
+      } catch {
+        // Fall back to defaults on error
+      }
+      setLoaded(true);
     }
-  }, [data, loaded, currentUserId]);
+    loadFromApi();
+  }, []);
 
   const updateSettings = useCallback((settings: Partial<WeddingData>) => {
     setData((prev) => ({ ...prev, ...settings }));
+    // Persist settings fields to API
+    const { guests, tables, budget, vendors, checklist, ...settingsOnly } = settings as Record<string, unknown>;
+    void guests; void tables; void budget; void vendors; void checklist;
+    if (Object.keys(settingsOnly).length > 0) {
+      api.put("/api/settings", settingsOnly).catch(() => {});
+    }
   }, []);
 
   // Guest operations
   const addGuest = useCallback((guest: Omit<Guest, "id" | "rsvpLink">) => {
-    const id = uuidv4();
-    setData((prev) => ({
-      ...prev,
-      guests: [...prev.guests, { ...guest, id, rsvpLink: id.slice(0, 8) }],
-    }));
+    api.post<Guest>("/api/guests", guest).then((created) => {
+      setData((prev) => ({
+        ...prev,
+        guests: [...prev.guests, created],
+      }));
+    }).catch(() => {});
   }, []);
 
   const addGuests = useCallback((guests: Omit<Guest, "id" | "rsvpLink">[]) => {
-    const newGuests = guests.map((g) => {
-      const id = uuidv4();
-      return { ...g, id, rsvpLink: id.slice(0, 8) };
-    });
-    setData((prev) => ({
-      ...prev,
-      guests: [...prev.guests, ...newGuests],
-    }));
+    api.post<Guest[]>("/api/guests", guests).then((created) => {
+      setData((prev) => ({
+        ...prev,
+        guests: [...prev.guests, ...created],
+      }));
+    }).catch(() => {});
   }, []);
 
   const updateGuest = useCallback((id: string, updates: Partial<Guest>) => {
@@ -96,6 +136,7 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
       ...prev,
       guests: prev.guests.map((g) => (g.id === id ? { ...g, ...updates } : g)),
     }));
+    api.put("/api/guests", { id, ...updates }).catch(() => {});
   }, []);
 
   const deleteGuest = useCallback((id: string) => {
@@ -107,14 +148,17 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
         guestIds: t.guestIds.filter((gId) => gId !== id),
       })),
     }));
+    api.delete("/api/guests", { id }).catch(() => {});
   }, []);
 
   // Table operations
   const addTable = useCallback((table: Omit<Table, "id" | "guestIds">) => {
-    setData((prev) => ({
-      ...prev,
-      tables: [...prev.tables, { ...table, id: uuidv4(), guestIds: [] }],
-    }));
+    api.post<Table>("/api/tables", table).then((created) => {
+      setData((prev) => ({
+        ...prev,
+        tables: [...prev.tables, created],
+      }));
+    }).catch(() => {});
   }, []);
 
   const updateTable = useCallback((id: string, updates: Partial<Table>) => {
@@ -122,6 +166,7 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
       ...prev,
       tables: prev.tables.map((t) => (t.id === id ? { ...t, ...updates } : t)),
     }));
+    api.put("/api/tables", { id, ...updates }).catch(() => {});
   }, []);
 
   const deleteTable = useCallback((id: string) => {
@@ -130,6 +175,7 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
       tables: prev.tables.filter((t) => t.id !== id),
       guests: prev.guests.map((g) => (g.tableId === id ? { ...g, tableId: undefined } : g)),
     }));
+    api.delete("/api/tables", { id }).catch(() => {});
   }, []);
 
   const assignGuestToTable = useCallback((guestId: string, tableId: string) => {
@@ -145,6 +191,8 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
       );
       return { ...prev, tables: newTables, guests: newGuests };
     });
+    // Update guest's tableId on the server
+    api.put("/api/guests", { id: guestId, tableId }).catch(() => {});
   }, []);
 
   const removeGuestFromTable = useCallback((guestId: string) => {
@@ -158,14 +206,17 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
         g.id === guestId ? { ...g, tableId: undefined } : g
       ),
     }));
+    api.put("/api/guests", { id: guestId, tableId: null }).catch(() => {});
   }, []);
 
   // Budget operations
   const addBudgetItem = useCallback((item: Omit<BudgetItem, "id">) => {
-    setData((prev) => ({
-      ...prev,
-      budget: [...prev.budget, { ...item, id: uuidv4() }],
-    }));
+    api.post<BudgetItem>("/api/budget", item).then((created) => {
+      setData((prev) => ({
+        ...prev,
+        budget: [...prev.budget, created],
+      }));
+    }).catch(() => {});
   }, []);
 
   const updateBudgetItem = useCallback((id: string, updates: Partial<BudgetItem>) => {
@@ -173,6 +224,7 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
       ...prev,
       budget: prev.budget.map((b) => (b.id === id ? { ...b, ...updates } : b)),
     }));
+    api.put("/api/budget", { id, ...updates }).catch(() => {});
   }, []);
 
   const deleteBudgetItem = useCallback((id: string) => {
@@ -180,14 +232,17 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
       ...prev,
       budget: prev.budget.filter((b) => b.id !== id),
     }));
+    api.delete("/api/budget", { id }).catch(() => {});
   }, []);
 
   // Vendor operations
   const addVendor = useCallback((vendor: Omit<Vendor, "id">) => {
-    setData((prev) => ({
-      ...prev,
-      vendors: [...prev.vendors, { ...vendor, id: uuidv4() }],
-    }));
+    api.post<Vendor>("/api/vendors", vendor).then((created) => {
+      setData((prev) => ({
+        ...prev,
+        vendors: [...prev.vendors, created],
+      }));
+    }).catch(() => {});
   }, []);
 
   const updateVendor = useCallback((id: string, updates: Partial<Vendor>) => {
@@ -195,6 +250,7 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
       ...prev,
       vendors: prev.vendors.map((v) => (v.id === id ? { ...v, ...updates } : v)),
     }));
+    api.put("/api/vendors", { id, ...updates }).catch(() => {});
   }, []);
 
   const deleteVendor = useCallback((id: string) => {
@@ -202,6 +258,7 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
       ...prev,
       vendors: prev.vendors.filter((v) => v.id !== id),
     }));
+    api.delete("/api/vendors", { id }).catch(() => {});
   }, []);
 
   // Checklist operations
@@ -214,13 +271,16 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
           : c
       ),
     }));
+    api.put("/api/checklist", { id, toggle: true }).catch(() => {});
   }, []);
 
   const addChecklistItem = useCallback((item: Omit<ChecklistItem, "id">) => {
-    setData((prev) => ({
-      ...prev,
-      checklist: [...prev.checklist, { ...item, id: uuidv4() }],
-    }));
+    api.post<ChecklistItem>("/api/checklist", item).then((created) => {
+      setData((prev) => ({
+        ...prev,
+        checklist: [...prev.checklist, created],
+      }));
+    }).catch(() => {});
   }, []);
 
   const deleteChecklistItem = useCallback((id: string) => {
@@ -228,6 +288,7 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
       ...prev,
       checklist: prev.checklist.filter((c) => c.id !== id),
     }));
+    api.delete("/api/checklist", { id }).catch(() => {});
   }, []);
 
   // Computed stats
@@ -248,6 +309,10 @@ export function WeddingProvider({ children, userId }: { children: ReactNode; use
       totalTasks: data.checklist.length,
     };
   }, [data.guests, data.budget, data.totalBudget, data.checklist]);
+
+  if (!loaded) {
+    return null;
+  }
 
   return (
     <WeddingContext.Provider

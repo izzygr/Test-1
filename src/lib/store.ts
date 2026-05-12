@@ -3,12 +3,6 @@
 import { WeddingData, ChecklistItem } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
-const STORAGE_KEY_PREFIX = "hatunateinu-data";
-
-function getStorageKey(userId?: string): string {
-  return userId ? `${STORAGE_KEY_PREFIX}-${userId}` : STORAGE_KEY_PREFIX;
-}
-
 const DEFAULT_CHECKLIST: Omit<ChecklistItem, "id">[] = [
   // 6+ months before
   { title: "קביעת תאריך החתונה", category: "כללי", assignee: "משותף", dueWeeksBefore: 26, completed: false, description: "תיאום עם הרבנים ובדיקת זמינות אולמות" },
@@ -60,73 +54,13 @@ export function getDefaultData(): WeddingData {
     brideFamily: "",
     venue: "",
     guests: [],
-    tables: generateDefaultTables(),
+    tables: [],
     budget: [],
     totalBudget: 150000,
     vendors: [],
     checklist: DEFAULT_CHECKLIST.map((item) => ({ ...item, id: uuidv4() })),
     language: "he",
   };
-}
-
-function generateDefaultTables(): import("@/types").Table[] {
-  const tables: import("@/types").Table[] = [];
-
-  // Men's side
-  tables.push({
-    id: uuidv4(), name: "שולחן כבוד - גברים", section: "גברים", type: "כבוד", capacity: 12,
-    guestIds: [], x: 50, y: 10,
-  });
-  tables.push({
-    id: uuidv4(), name: "שולחן רבנים", section: "גברים", type: "רבנים", capacity: 10,
-    guestIds: [], x: 50, y: 25,
-  });
-  for (let i = 1; i <= 8; i++) {
-    tables.push({
-      id: uuidv4(), name: `שולחן גברים ${i}`, section: "גברים", type: i <= 2 ? "משפחה" : "רגיל",
-      capacity: 10, guestIds: [], x: 15 + ((i - 1) % 4) * 23, y: 40 + Math.floor((i - 1) / 4) * 20,
-    });
-  }
-
-  // Women's side
-  tables.push({
-    id: uuidv4(), name: "שולחן כבוד - נשים", section: "נשים", type: "כבוד", capacity: 12,
-    guestIds: [], x: 50, y: 10,
-  });
-  for (let i = 1; i <= 8; i++) {
-    tables.push({
-      id: uuidv4(), name: `שולחן נשים ${i}`, section: "נשים", type: i <= 2 ? "משפחה" : "רגיל",
-      capacity: 10, guestIds: [], x: 15 + ((i - 1) % 4) * 23, y: 30 + Math.floor((i - 1) / 4) * 20,
-    });
-  }
-
-  return tables;
-}
-
-export function loadData(userId?: string): WeddingData {
-  if (typeof window === "undefined") return getDefaultData();
-  try {
-    const key = getStorageKey(userId);
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      const defaults = getDefaultData();
-      return { ...defaults, ...parsed };
-    }
-  } catch {
-    // ignore
-  }
-  return getDefaultData();
-}
-
-export function saveData(data: WeddingData, userId?: string): void {
-  if (typeof window === "undefined") return;
-  try {
-    const key = getStorageKey(userId);
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch {
-    // ignore
-  }
 }
 
 export function exportToJson(data: WeddingData): string {

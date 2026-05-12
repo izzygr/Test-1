@@ -13,6 +13,9 @@ import {
   Sparkles,
   Settings,
   Baby,
+  AlertTriangle,
+  Store,
+  HardDrive,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -223,6 +226,18 @@ function SettingsModal({
             ביטול
           </button>
         </div>
+
+        {/* Backup link */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <Link
+            href="/backup"
+            onClick={onClose}
+            className="w-full flex items-center justify-center gap-2 text-sm btn-outline"
+          >
+            <HardDrive className="w-4 h-4" />
+            גיבוי ושחזור נתונים
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -243,7 +258,7 @@ export default function Dashboard() {
       <div className="text-center py-8">
         <div className="flex items-center justify-center gap-3 mb-4">
           <h1 className="text-4xl md:text-5xl font-bold font-hebrew text-navy-700">
-            חתונתנו
+            החתונה
           </h1>
           <Sparkles className="w-7 h-7 text-gold-500" />
         </div>
@@ -357,6 +372,75 @@ export default function Dashboard() {
         />
       </div>
 
+      {/* Overdue Tasks & Vendor Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Overdue / Upcoming Tasks */}
+        <div className="card">
+          <h3 className="text-lg font-bold text-navy-700 font-hebrew mb-3 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
+            משימות קרובות
+          </h3>
+          {(() => {
+            if (!data.weddingDate) return <p className="text-sm text-gray-400">הגדירו תאריך חתונה לצפייה במשימות קרובות</p>;
+            const weddingMs = new Date(data.weddingDate).getTime();
+            const nowMs = Date.now();
+            const weeksUntil = Math.floor((weddingMs - nowMs) / (7 * 24 * 60 * 60 * 1000));
+            const urgent = data.checklist
+              .filter((c) => !c.completed && c.dueWeeksBefore >= weeksUntil)
+              .sort((a, b) => b.dueWeeksBefore - a.dueWeeksBefore)
+              .slice(0, 5);
+            if (urgent.length === 0) return <p className="text-sm text-gray-400">כל המשימות מעודכנות!</p>;
+            return (
+              <div className="space-y-2">
+                {urgent.map((task) => (
+                  <div key={task.id} className={`flex items-center gap-2 p-2 rounded-lg text-sm ${task.dueWeeksBefore > weeksUntil ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${task.dueWeeksBefore > weeksUntil ? "bg-red-500" : "bg-amber-500"}`} />
+                    <span className="flex-1">{task.title}</span>
+                    {task.dueWeeksBefore > weeksUntil && <span className="text-xs font-medium">באיחור!</span>}
+                  </div>
+                ))}
+                <Link href="/checklist" className="block text-center text-sm text-gold-600 hover:text-gold-700 mt-2">
+                  צפייה בכל המשימות →
+                </Link>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Vendor Summary */}
+        <div className="card">
+          <h3 className="text-lg font-bold text-navy-700 font-hebrew mb-3 flex items-center gap-2">
+            <Store className="w-5 h-5 text-orange-500" />
+            סטטוס ספקים
+          </h3>
+          {data.vendors.length === 0 ? (
+            <p className="text-sm text-gray-400">לא הוספו ספקים עדיין</p>
+          ) : (
+            <div className="space-y-2">
+              {[
+                { status: "נסגר", label: "נסגרו", color: "bg-green-100 text-green-700" },
+                { status: "שולם", label: "שולמו", color: "bg-blue-100 text-blue-700" },
+                { status: "בבדיקה", label: "בבדיקה", color: "bg-amber-100 text-amber-700" },
+                { status: "בוטל", label: "בוטלו", color: "bg-red-100 text-red-700" },
+              ].map(({ status, label, color }) => {
+                const count = data.vendors.filter((v) => v.status === status).length;
+                if (count === 0) return null;
+                const total = data.vendors.filter((v) => v.status === status).reduce((s, v) => s + v.price, 0);
+                return (
+                  <div key={status} className={`flex items-center justify-between p-2 rounded-lg text-sm ${color}`}>
+                    <span>{label}: {count} ספקים</span>
+                    <span className="font-medium">₪{total.toLocaleString()}</span>
+                  </div>
+                );
+              })}
+              <Link href="/vendors" className="block text-center text-sm text-gold-600 hover:text-gold-700 mt-2">
+                ניהול ספקים →
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div className="card">
         <h2 className="text-xl font-bold text-navy-700 font-hebrew mb-4">גישה מהירה</h2>
@@ -391,4 +475,4 @@ export default function Dashboard() {
 }
 
 // Need these imports for the quick actions
-import { LayoutGrid, Mail, Store } from "lucide-react";
+import { LayoutGrid, Mail } from "lucide-react";

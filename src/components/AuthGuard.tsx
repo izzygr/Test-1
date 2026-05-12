@@ -1,14 +1,22 @@
 "use client";
 
 import { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { WeddingProvider } from "@/lib/context";
-import LoginPage from "@/app/login/page";
+import LoginForm from "./LoginForm";
 import Navigation from "./Navigation";
 import { Loader2 } from "lucide-react";
 
+const PUBLIC_PATHS = ["/rsvp/respond"];
+
 export default function AuthGuard({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
+  const pathname = usePathname();
+
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+    return <>{children}</>;
+  }
 
   if (isLoading) {
     return (
@@ -19,11 +27,11 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
   }
 
   if (!user) {
-    return <LoginPage />;
+    return <LoginForm />;
   }
 
   return (
-    <WeddingProvider userId={user.id}>
+    <WeddingProvider>
       <div className="flex min-h-screen">
         <Navigation />
         <main className="flex-1 lg:mr-64 pt-16 lg:pt-0">

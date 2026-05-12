@@ -14,6 +14,7 @@ import {
   UserPlus,
   X,
   Printer,
+  ArrowRightLeft,
 } from "lucide-react";
 
 function TableCard({
@@ -56,7 +57,10 @@ function TableCard({
     <div className={`rounded-2xl border-2 ${typeColors[table.type] || typeColors["רגיל"]} p-4 transition-all`}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <h4 className="font-bold text-navy-700 text-sm">{table.name}</h4>
+          <div>
+            <h4 className="font-bold text-navy-700 text-sm">{table.name}</h4>
+            {table.createdBy && <p className="text-[11px] text-gray-400">נוסף ע״י {table.createdBy}</p>}
+          </div>
           {isOverflow && <AlertTriangle className="w-4 h-4 text-red-500" />}
         </div>
         <div className="flex items-center gap-1">
@@ -190,7 +194,7 @@ function AddTableModal({
 }
 
 export default function SeatingPage() {
-  const { data, addTable, deleteTable, assignGuestToTable, removeGuestFromTable } = useWedding();
+  const { data, addTable, deleteTable, assignGuestToTable, removeGuestFromTable, updateGuest } = useWedding();
   const [activeSection, setActiveSection] = useState<"גברים" | "נשים">("גברים");
   const [showAddTable, setShowAddTable] = useState(false);
 
@@ -308,9 +312,18 @@ export default function SeatingPage() {
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
             {(activeSection === "גברים" ? unassignedMen : unassignedWomen).map((guest) => (
-              <div key={guest.id} className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-sm">
-                <span className="font-medium">{guest.firstName} {guest.lastName}</span>
-                <span className="text-gray-500 mr-1">({guest.numberOfGuests})</span>
+              <div key={guest.id} className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-sm flex items-center justify-between gap-2">
+                <div>
+                  <span className="font-medium">{guest.firstName} {guest.lastName}</span>
+                  <span className="text-gray-500 mr-1">({guest.numberOfGuests})</span>
+                </div>
+                <button
+                  onClick={() => updateGuest(guest.id, { gender: guest.gender === "male" ? "female" : "male" })}
+                  className="p-1 hover:bg-white rounded-lg text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+                  title={`העבר ל${guest.gender === "male" ? "נשים" : "גברים"}`}
+                >
+                  <ArrowRightLeft className="w-3.5 h-3.5" />
+                </button>
               </div>
             ))}
           </div>

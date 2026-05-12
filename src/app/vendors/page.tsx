@@ -278,6 +278,9 @@ export default function VendorsPage() {
                 <div>
                   <h3 className="font-bold text-navy-700 text-lg">{vendor.name}</h3>
                   <p className="text-sm text-gray-500">{BUDGET_CATEGORY_LABELS[vendor.category]}</p>
+                  {vendor.createdBy && (
+                    <p className="text-[11px] text-gray-400 mt-0.5">נוסף ע״י {vendor.createdBy}</p>
+                  )}
                 </div>
                 <span className={`badge ${statusBadge(vendor.status)} flex items-center gap-1`}>
                   {statusIcon(vendor.status)}

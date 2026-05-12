@@ -18,6 +18,8 @@ import {
   Shield,
   LogOut,
   User,
+  Clock,
+  HardDrive,
 } from "lucide-react";
 
 const navItems = [
@@ -28,6 +30,8 @@ const navItems = [
   { href: "/budget", label: "תקציב", icon: Wallet },
   { href: "/vendors", label: "ספקים", icon: Store },
   { href: "/checklist", label: "משימות", icon: CheckSquare },
+  { href: "/activity-log", label: "יומן פעילות", icon: Clock },
+  { href: "/backup", label: "גיבוי", icon: HardDrive },
 ];
 
 export default function Navigation() {
@@ -48,7 +52,7 @@ export default function Navigation() {
           <div className="flex items-center justify-center gap-2 mb-1">
             <Sparkles className="w-5 h-5 text-gold-500" />
             <h1 className="text-xl font-bold font-hebrew text-navy-700">
-              חתונתנו
+              החתונה
             </h1>
           </div>
           <p className="text-xs text-gray-400">ניהול חתונה חכם</p>
@@ -115,7 +119,7 @@ export default function Navigation() {
           </button>
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-gold-500" />
-            <h1 className="text-lg font-bold font-hebrew text-navy-700">חתונתנו</h1>
+            <h1 className="text-lg font-bold font-hebrew text-navy-700">החתונה</h1>
           </div>
           <div className="w-10" />
         </div>

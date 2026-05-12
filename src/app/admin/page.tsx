@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth";
 import { getUsers, addUser, deleteUser, updateUser } from "@/lib/auth-store";
 import { AppUser } from "@/types";
@@ -15,6 +15,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+type UserInfo = Omit<AppUser, "password">;
+
 function UserFormModal({
   open,
   onClose,
@@ -22,12 +24,13 @@ function UserFormModal({
 }: {
   open: boolean;
   onClose: () => void;
-  editUser?: AppUser;
+  editUser?: UserInfo;
 }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (editUser) {
@@ -44,31 +47,38 @@ function UserFormModal({
 
   if (!open) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSubmitting(true);
 
-    if (editUser) {
-      const updates: Partial<Pick<AppUser, "password" | "displayName">> = {};
-      if (displayName && displayName !== editUser.displayName) updates.displayName = displayName;
-      if (password) updates.password = password;
-      if (Object.keys(updates).length === 0) {
+    try {
+      if (editUser) {
+        const updates: Partial<Pick<AppUser, "password" | "displayName">> = {};
+        if (displayName && displayName !== editUser.displayName) updates.displayName = displayName;
+        if (password) updates.password = password;
+        if (Object.keys(updates).length === 0) {
+          onClose();
+          return;
+        }
+        await updateUser(editUser.id, updates);
         onClose();
-        return;
+      } else {
+        if (!username || !password || !displayName) {
+          setError("יש למלא את כל השדות");
+          return;
+        }
+        const result = await addUser(username, password, displayName);
+        if (!result) {
+          setError("שם משתמש כבר קיים");
+          return;
+        }
+        onClose();
       }
-      updateUser(editUser.id, updates);
-      onClose();
-    } else {
-      if (!username || !password || !displayName) {
-        setError("יש למלא את כל השדות");
-        return;
-      }
-      const result = addUser(username, password, displayName);
-      if (!result) {
-        setError("שם משתמש כבר קיים");
-        return;
-      }
-      onClose();
+    } catch {
+      setError("שגיאה בשמירה");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -132,7 +142,7 @@ function UserFormModal({
           )}
 
           <div className="flex gap-3 pt-2">
-            <button type="submit" className="btn-gold flex-1 flex items-center justify-center gap-2">
+            <button type="submit" disabled={submitting} className="btn-gold flex-1 flex items-center justify-center gap-2">
               <Check className="w-4 h-4" />
               {editUser ? "עדכון" : "הוספה"}
             </button>
@@ -148,16 +158,19 @@ function UserFormModal({
 
 export default function AdminPage() {
   const { user } = useAuth();
-  const [users, setUsers] = useState<AppUser[]>([]);
+  const [users, setUsers] = useState<UserInfo[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<AppUser | undefined>();
+  const [editingUser, setEditingUser] = useState<UserInfo | undefined>();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const refreshUsers = () => setUsers(getUsers());
+  const refreshUsers = useCallback(async () => {
+    const list = await getUsers();
+    setUsers(list as UserInfo[]);
+  }, []);
 
   useEffect(() => {
     refreshUsers();
-  }, []);
+  }, [refreshUsers]);
 
   if (!user?.isAdmin) {
     return (
@@ -171,13 +184,13 @@ export default function AdminPage() {
     );
   }
 
-  const handleDelete = (id: string) => {
-    deleteUser(id);
+  const handleDelete = async (id: string) => {
+    await deleteUser(id);
     setDeleteConfirm(null);
     refreshUsers();
   };
 
-  const handleEdit = (u: AppUser) => {
+  const handleEdit = (u: UserInfo) => {
     setEditingUser(u);
     setModalOpen(true);
   };
