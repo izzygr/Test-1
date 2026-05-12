@@ -15,8 +15,7 @@ import {
   Baby,
   AlertTriangle,
   Store,
-  Download,
-  Upload,
+  HardDrive,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -104,7 +103,7 @@ function SettingsModal({
   open: boolean;
   onClose: () => void;
 }) {
-  const { data, updateSettings, setData } = useWedding();
+  const { data, updateSettings } = useWedding();
   const [form, setForm] = useState({
     groomName: data.groomName,
     brideName: data.brideName,
@@ -228,59 +227,16 @@ function SettingsModal({
           </button>
         </div>
 
-        {/* Backup / Restore */}
+        {/* Backup link */}
         <div className="mt-6 pt-6 border-t border-gray-200">
-          <h3 className="text-sm font-medium text-gray-600 mb-3">גיבוי ושחזור</h3>
-          <div className="flex gap-3">
-            <button
-              className="btn-outline flex-1 flex items-center justify-center gap-2 text-sm"
-              onClick={() => {
-                const backup = JSON.stringify(data, null, 2);
-                const blob = new Blob([backup], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `wedding-backup-${new Date().toISOString().slice(0, 10)}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
-            >
-              <Download className="w-4 h-4" />
-              ייצוא גיבוי
-            </button>
-            <label className="btn-outline flex-1 flex items-center justify-center gap-2 text-sm cursor-pointer">
-              <Upload className="w-4 h-4" />
-              ייבוא גיבוי
-              <input
-                type="file"
-                accept=".json"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  const reader = new FileReader();
-                  reader.onload = (ev) => {
-                    try {
-                      const restored = JSON.parse(ev.target?.result as string);
-                      if (restored.guests && restored.checklist) {
-                        if (confirm("לשחזר את הנתונים מהגיבוי? הנתונים הנוכחיים יוחלפו.")) {
-                          setData(restored);
-                          updateSettings(restored);
-                          onClose();
-                        }
-                      } else {
-                        alert("קובץ גיבוי לא תקין");
-                      }
-                    } catch {
-                      alert("שגיאה בקריאת הקובץ");
-                    }
-                  };
-                  reader.readAsText(file);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-          </div>
+          <Link
+            href="/backup"
+            onClick={onClose}
+            className="w-full flex items-center justify-center gap-2 text-sm btn-outline"
+          >
+            <HardDrive className="w-4 h-4" />
+            גיבוי ושחזור נתונים
+          </Link>
         </div>
       </div>
     </div>
