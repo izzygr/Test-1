@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Guest } from "@/types";
+import { Guest, GuestGroup, GUEST_GROUP_LABELS } from "@/types";
 import {
   X,
   Upload,
@@ -19,12 +19,15 @@ interface PreviewRow {
   firstName: string;
   lastName: string;
   gender?: "male" | "female";
+  numberOfGuests: number;
   isCouple: boolean;
   maleName: string;
   femaleName: string;
 }
 
-const COLUMN_MAP: Record<string, "firstName" | "lastName" | "gender"> = {
+type MappedField = "firstName" | "lastName" | "gender" | "numberOfGuests";
+
+const COLUMN_MAP: Record<string, MappedField> = {
   "שם פרטי": "firstName",
   "שם": "firstName",
   "first_name": "firstName",
@@ -36,6 +39,10 @@ const COLUMN_MAP: Record<string, "firstName" | "lastName" | "gender"> = {
   "lastname": "lastName",
   "מין": "gender",
   "gender": "gender",
+  "מספר אורחים": "numberOfGuests",
+  "אורחים": "numberOfGuests",
+  "guests": "numberOfGuests",
+  "כמות": "numberOfGuests",
 };
 
 function resolveGender(value: string): "male" | "female" | undefined {
@@ -73,10 +80,13 @@ function parseRow(row: Record<string, string>): PreviewRow {
   const gender = mapped["gender"] ? resolveGender(mapped["gender"]) : undefined;
   const couple = detectCouple(firstName);
 
+  const numberOfGuests = Number(mapped["numberOfGuests"]) || 2;
+
   return {
     firstName: couple.isCouple ? firstName : firstName,
     lastName,
     gender,
+    numberOfGuests,
     ...couple,
   };
 }
@@ -98,7 +108,11 @@ function downloadTemplate() {
   URL.revokeObjectURL(url);
 }
 
-function rowsToGuests(rows: PreviewRow[]): Omit<Guest, "id" | "rsvpLink">[] {
+function rowsToGuests(
+  rows: PreviewRow[],
+  globalSide: "חתן" | "כלה",
+  globalGroup: GuestGroup
+): Omit<Guest, "id" | "rsvpLink">[] {
   const guests: Omit<Guest, "id" | "rsvpLink">[] = [];
   for (const row of rows) {
     if (!row.firstName && !row.lastName) continue;
@@ -107,10 +121,10 @@ function rowsToGuests(rows: PreviewRow[]): Omit<Guest, "id" | "rsvpLink">[] {
       lastName: row.lastName,
       phone: "",
       email: "",
-      group: "אחר" as const,
-      side: "חתן" as const,
+      group: globalGroup,
+      side: globalSide,
       status: "טרם_הוזמן" as const,
-      numberOfGuests: 1,
+      numberOfGuests: row.numberOfGuests,
       numberOfChildren: 0,
       dietaryNotes: "",
       notes: "",
@@ -145,6 +159,8 @@ export default function CsvUploadModal({
   const [importing, setImporting] = useState(false);
   const [done, setDone] = useState(false);
   const [importCount, setImportCount] = useState(0);
+  const [globalSide, setGlobalSide] = useState<"חתן" | "כלה">("חתן");
+  const [globalGroup, setGlobalGroup] = useState<GuestGroup>("אחר");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const reset = useCallback(() => {
@@ -230,8 +246,14 @@ export default function CsvUploadModal({
     );
   };
 
+  const updateGuestCount = (index: number, value: number) => {
+    setRows((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, numberOfGuests: Math.max(1, value) } : row))
+    );
+  };
+
   const handleImport = () => {
-    const guests = rowsToGuests(rows);
+    const guests = rowsToGuests(rows, globalSide, globalGroup);
     if (guests.length === 0) return;
     setImporting(true);
     setImportCount(guests.length);
@@ -336,6 +358,25 @@ export default function CsvUploadModal({
               </button>
             </div>
 
+            {/* Global Settings */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">צד</label>
+                <select className="select-field text-sm" value={globalSide} onChange={(e) => setGlobalSide(e.target.value as "חתן" | "כלה")}>
+                  <option value="חתן">צד החתן</option>
+                  <option value="כלה">צד הכלה</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">קבוצה</label>
+                <select className="select-field text-sm" value={globalGroup} onChange={(e) => setGlobalGroup(e.target.value as GuestGroup)}>
+                  {Object.entries(GUEST_GROUP_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             {/* Summary */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="p-3 bg-gold-50 rounded-xl text-center">
@@ -368,6 +409,7 @@ export default function CsvUploadModal({
                     <th className="text-right py-2 px-3 font-medium text-navy-700 w-10">#</th>
                     <th className="text-right py-2 px-3 font-medium text-navy-700">שם פרטי</th>
                     <th className="text-right py-2 px-3 font-medium text-navy-700">שם משפחה</th>
+                    <th className="text-center py-2 px-3 font-medium text-navy-700 w-16">אורחים</th>
                     <th className="text-center py-2 px-3 font-medium text-navy-700">זוג</th>
                     <th className="text-center py-2 px-3 font-medium text-navy-700 w-10"></th>
                   </tr>
@@ -401,6 +443,16 @@ export default function CsvUploadModal({
                         )}
                       </td>
                       <td className="py-2 px-3 text-gray-700">{row.lastName}</td>
+                      <td className="py-2 px-3 text-center">
+                        <input
+                          type="number"
+                          min="1"
+                          max="20"
+                          className="input-field w-14 py-1 px-1 text-center text-sm"
+                          value={row.numberOfGuests}
+                          onChange={(e) => updateGuestCount(i, Number(e.target.value))}
+                        />
+                      </td>
                       <td className="py-2 px-3 text-center">
                         <button
                           onClick={() => toggleCouple(i)}

@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronUp,
   Star,
+  AlertTriangle,
 } from "lucide-react";
 
 const ASSIGNEE_LABELS: Record<TaskAssignee, string> = {
@@ -187,8 +188,31 @@ export default function ChecklistPage() {
 
   const completedPercent = stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0;
 
+  const weeksUntilWedding = data.weddingDate
+    ? Math.floor((new Date(data.weddingDate).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000))
+    : null;
+
+  const overdueCount = weeksUntilWedding !== null
+    ? data.checklist.filter((c) => !c.completed && c.dueWeeksBefore > weeksUntilWedding).length
+    : 0;
+
+  const isOverdue = (item: ChecklistItem) =>
+    weeksUntilWedding !== null && !item.completed && item.dueWeeksBefore > weeksUntilWedding;
+
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Overdue Alert */}
+      {overdueCount > 0 && (
+        <div className="card bg-red-50 border-red-200">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+            <p className="text-sm text-red-800">
+              <strong>{overdueCount} משימות</strong> עברו את הזמן שלהן ועדיין לא בוצעו!
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
@@ -284,7 +308,7 @@ export default function ChecklistPage() {
                       <div
                         key={item.id}
                         className={`flex items-start gap-3 p-3 rounded-xl transition-all ${
-                          item.completed ? "bg-green-50/50 opacity-75" : "bg-gray-50 hover:bg-gray-100"
+                          item.completed ? "bg-green-50/50 opacity-75" : isOverdue(item) ? "bg-red-50 border border-red-200" : "bg-gray-50 hover:bg-gray-100"
                         }`}
                       >
                         <button
@@ -313,6 +337,9 @@ export default function ChecklistPage() {
                             <span className="badge text-xs bg-gray-100 text-gray-600">
                               {item.category}
                             </span>
+                            {isOverdue(item) && (
+                              <span className="badge text-xs bg-red-100 text-red-700">באיחור!</span>
+                            )}
                             {item.createdBy && (
                               <span className="text-[11px] text-gray-400">נוסף ע״י {item.createdBy}</span>
                             )}

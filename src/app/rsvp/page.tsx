@@ -13,6 +13,7 @@ import {
   UserCheck,
   Clock,
   XCircle,
+  Search,
 } from "lucide-react";
 import { INVITATION_STATUS_LABELS } from "@/types";
 
@@ -20,13 +21,17 @@ export default function RSVPPage() {
   const { data, updateGuest } = useWedding();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
   const filteredGuests = useMemo(() => {
-    if (filter === "all") return data.guests;
-    return data.guests.filter((g) => g.status === filter);
-  }, [data.guests, filter]);
+    return data.guests.filter((g) => {
+      if (filter !== "all" && g.status !== filter) return false;
+      if (search && !`${g.firstName} ${g.lastName}`.includes(search) && !g.phone.includes(search)) return false;
+      return true;
+    });
+  }, [data.guests, filter, search]);
 
   const stats = useMemo(() => {
     const total = data.guests.length;
@@ -108,8 +113,17 @@ export default function RSVPPage() {
         })}
       </div>
 
-      {/* Filter */}
-      <div className="card">
+      {/* Search & Filter */}
+      <div className="card space-y-3">
+        <div className="relative">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            className="input-field pr-10"
+            placeholder="חיפוש לפי שם או טלפון..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <div className="flex flex-wrap gap-2">
           {[
             { key: "all", label: "הכל" },
